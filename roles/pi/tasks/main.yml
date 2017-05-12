@@ -2,20 +2,58 @@
 - set_fact:
     real_ansible_host: "{{ ansible_host }}"
 
-- name: 'Configure WIFI'
-  copy: src=./wpa_supplicant.conf dest=/etc/wpa_supplicant/wpa_supplicant.conf mode=0600
+- name: 'Disable WIFI and Bluetooth'
+  copy: src=./files/raspi-blacklist.conf dest=/etc/modprobe.d/raspi-blacklist.conf mode=0600
 
 - name: 'Update APT package cache'
-  action: apt update_cache=yes
+  apt:
+    update_cache: yes
+    upgrade: safe
 
-- name: 'Upgrade APT to the lastest packages'
-  action: apt upgrade=safe
+- name: Install python-apt
+  apt:
+    package: python-apt
+    state: present
+
+- name: Install NTP
+  apt:
+    package: ntp
+    state: present
+  tags: ntp
+
+- name: Copy over the NTP configuration
+  template: src=files/ntp.conf dest=/etc/ntp.conf
+  notify:
+    - restart ntp
+    - force ntp update
+  tags: ntp
+
+- name: Make sure NTP is started up
+  service: name=ntp state=started enabled=yes
+  tags: ntp
+
+- name: "Download Pi-Hole installer"
+  get_url:
+      url: http://install.pi-hole.net
+      dest: ~/install-pihole.sh
+      mode: 0740
+  tags: pihole
+
+- name: 'Set Pi-Hole configuration'
+  copy: src=./files/setupVars.conf dest=/etc/pihole/setupVars.conf mode=0600
+  tags: pihole
+
+- name: Install Pi-Hole
+  shell: "~/install-pihole.sh --unattended"
+  register: dbg_install_pihole
+  tags: pihole
 
 - name: 'Reboot'
   shell: sleep 2 && reboot
   async: 1
   poll: 0
   ignore_errors: true
+  tags: pihole
 
 - name: "Wait for Raspberry PI to come back"
   local_action: wait_for host={{ real_ansible_host }} port=22 state=started delay=10
