@@ -2,6 +2,10 @@
 - set_fact:
     real_ansible_host: "{{ ansible_host }}"
 
+- name: "Setting hostname to 'pihole'"
+  hostname:
+    name: pihole
+
 - name: 'Disable WIFI and Bluetooth'
   copy: src=./files/raspi-blacklist.conf dest=/etc/modprobe.d/raspi-blacklist.conf mode=0600
 
@@ -39,9 +43,23 @@
       mode: 0740
   tags: pihole
 
-- name: 'Set Pi-Hole configuration'
-  copy: src=./files/setupVars.conf dest=/etc/pihole/setupVars.conf mode=0600
-  tags: pihole
+- name: Create pihole configuration directory
+  become: True
+  file:
+    name="{{ fspath_pihole_config }}"
+    state=directory
+    owner="{{ user_pihole }}"
+    group="{{ group_pihole }}"
+    mode=0755
+
+- name: Create pihole configuration
+  become: True
+  template:
+    src="setupVars.conf.j2"
+    dest="{{ fspath_pihole_config }}/setupVars.conf"
+    owner=root
+    group=root
+    mode=0644
 
 - name: Install Pi-Hole
   shell: "~/install-pihole.sh --unattended"
