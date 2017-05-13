@@ -109,7 +109,7 @@
 - name: Set static IP configuration
   become: True
   template:
-    src="etc_network_interfaces"
+    src="etc_network_interfaces.j2"
     dest="/etc/network/interfaces"
     owner=root
     group=root
