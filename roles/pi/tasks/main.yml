@@ -116,6 +116,15 @@
     mode=0644
   tags: admin
 
+- name: Set PiHole to update every week
+  become: True
+  replace:
+    path: /etc/cron.d/pihole
+    regexp: '^#(.*updatePihole.*)$'
+    replace: '\1'
+    backup: yes
+  tags: admin
+
 - name: 'Reboot'
   shell: sleep 2 && reboot
   async: 1
