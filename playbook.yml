@@ -1,8 +1,9 @@
-#!/usr/bin/env ansible-playbook -i hosts --become -c paramiko
+#!/usr/bin/env ansible-playbook -i inventory --become -c paramiko
+#!/usr/bin/env ansible-playbook -i inventory --ask-pass --check playbook.yml
 ---
 
 - name: Ansible Playbook for configuring Pi-Hole on Raspberry Pi
-  hosts: webservers
+  hosts: piholes
   roles:
     - pi
   remote_user: pi
